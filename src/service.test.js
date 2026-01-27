@@ -18,4 +18,5 @@ test('login', async () => {
   const user = { ...testUser, roles: [{ role: 'diner' }] };
   delete user.password
   expect(loginRes.body.user).toMatchObject(user);
+  expect(loginRes.body.authToken).not.toBe(testUserAuthToken);
 });
