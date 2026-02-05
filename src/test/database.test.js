@@ -50,3 +50,30 @@ test('addMenuItemTest', async () => {
     expect(result).toEqual({ ...newItem, id: mockInsertId });
     expect(mockConnection.end).toHaveBeenCalledTimes(1);
 });
+
+test('updateUserTest', async () => {
+    const mockConnection = { end: jest.fn() };
+    DB.getConnection.mockResolvedValue(mockConnection);
+
+    const userId = 1;
+    const name = 'John Doe';
+    const email = 'john.doe@example.com';
+    const password = 'newpassword123';
+    const hashedPassword = 'hashedpassword123';
+
+    jest.spyOn(require('bcrypt'), 'hash').mockResolvedValue(hashedPassword);
+    DB.query.mockResolvedValue();
+    DB.getUser = jest.fn().mockResolvedValue({ id: userId, name, email });
+
+    const result = await DB.updateUser(userId, name, email, password);
+
+    expect(DB.getConnection).toHaveBeenCalledTimes(1);
+    expect(require('bcrypt').hash).toHaveBeenCalledWith(password, 10);
+    expect(DB.query).toHaveBeenCalledWith(
+        mockConnection,
+        `UPDATE user SET password='${hashedPassword}', email='${email}', name='${name}' WHERE id=${userId}`
+    );
+    expect(DB.getUser).toHaveBeenCalledWith(email, password);
+    expect(result).toEqual({ id: userId, name, email });
+    expect(mockConnection.end).toHaveBeenCalledTimes(1);
+});
