@@ -4,10 +4,18 @@ jest.mock('mysql2/promise', () => ({
     createConnection: jest.fn(),
 }));
 
+let mockConnection;
+
 beforeEach(() => {
-    DB.getConnection = jest.fn();
+    mockConnection = { end: jest.fn() };
+    DB.getConnection = jest.fn().mockResolvedValue(mockConnection);
     DB.query = jest.fn();
+    DB.getTokenSignature = jest.fn((token) => token);
 });
+
+afterEach(() => {
+    jest.clearAllMocks();
+  });
 
 test('getMenuTest', async () => {
     const mockConnection = { end: jest.fn() };
@@ -75,5 +83,33 @@ test('updateUserTest', async () => {
     );
     expect(DB.getUser).toHaveBeenCalledWith(email, password);
     expect(result).toEqual({ id: userId, name, email });
+    expect(mockConnection.end).toHaveBeenCalledTimes(1);
+});
+
+test('isLoggedInTest', async () => {
+    const token = 'validToken';
+    const userId = 1;
+
+    DB.query.mockResolvedValue([{ userId }]);
+
+    const result = await DB.isLoggedIn(token);
+
+    expect(DB.getTokenSignature).toHaveBeenCalledWith(token);
+    expect(DB.getConnection).toHaveBeenCalledTimes(1);
+    expect(DB.query).toHaveBeenCalledWith(mockConnection, `SELECT userId FROM auth WHERE token=?`, [token]);
+    expect(result).toBe(true);
+    expect(mockConnection.end).toHaveBeenCalledTimes(1);
+});
+
+test('logoutUserTest', async () => {
+    const token = 'validToken';
+
+    DB.query.mockResolvedValue();
+
+    await DB.logoutUser(token);
+
+    expect(DB.getTokenSignature).toHaveBeenCalledWith(token);
+    expect(DB.getConnection).toHaveBeenCalledTimes(1);
+    expect(DB.query).toHaveBeenCalledWith(mockConnection, `DELETE FROM auth WHERE token=?`, [token]);
     expect(mockConnection.end).toHaveBeenCalledTimes(1);
 });
