@@ -113,3 +113,23 @@ test('logoutUserTest', async () => {
     expect(DB.query).toHaveBeenCalledWith(mockConnection, `DELETE FROM auth WHERE token=?`, [token]);
     expect(mockConnection.end).toHaveBeenCalledTimes(1);
 });
+
+test('getOrdersTest', async () => {
+    const mockConnection = { end: jest.fn() };
+    DB.getConnection.mockResolvedValue(mockConnection);
+
+    const user = { id: 123 };
+    const page = 1;
+    const mockOrders = [{ id: 1, franchiseId: 10, storeId: 20, date: '2024-01-01' }];
+    const mockItems = [{ id: 50, menuId: 5, description: 'Veggie Pizza', price: 15.99 }];
+    
+    DB.query.mockResolvedValueOnce(mockOrders).mockResolvedValueOnce(mockItems);
+
+    const result = await DB.getOrders(user, page);
+
+    expect(DB.getConnection).toHaveBeenCalledTimes(1);
+    expect(DB.query).toHaveBeenNthCalledWith(1, mockConnection, expect.stringContaining('SELECT id, franchiseId, storeId, date FROM dinerOrder WHERE dinerId=?'), [user.id]);
+    expect(DB.query).toHaveBeenNthCalledWith(2, mockConnection, 'SELECT id, menuId, description, price FROM orderItem WHERE orderId=?', [mockOrders[0].id]);
+    expect(result).toEqual({dinerId: user.id, orders: [{ ...mockOrders[0], items: mockItems }], page: page });
+    expect(mockConnection.end).toHaveBeenCalledTimes(1);
+});
