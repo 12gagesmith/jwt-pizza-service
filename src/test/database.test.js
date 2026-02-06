@@ -133,3 +133,32 @@ test('getOrdersTest', async () => {
     expect(result).toEqual({dinerId: user.id, orders: [{ ...mockOrders[0], items: mockItems }], page: page });
     expect(mockConnection.end).toHaveBeenCalledTimes(1);
 });
+
+test('addDinerOrderTest', async () => {
+    const mockConnection = { end: jest.fn() };
+    DB.getConnection.mockResolvedValue(mockConnection);
+
+    const user = { id: 123 };
+    const order = {
+        franchiseId: 1,
+        storeId: 1,
+        items: [
+            { menuId: 10, description: 'Veggie Pizza', price: 15.99 },
+            { menuId: 11, description: 'Soda', price: 2.50 }
+        ]
+    };
+
+    const mockOrderId = 999;
+    DB.query.mockResolvedValueOnce({ insertId: mockOrderId });
+    DB.getID = jest.fn().mockResolvedValueOnce(10).mockResolvedValueOnce(11);
+    DB.query.mockResolvedValue({ insertId: 1 });
+
+    const result = await DB.addDinerOrder(user, order);
+
+    expect(DB.getConnection).toHaveBeenCalledTimes(1);
+    expect(DB.query).toHaveBeenNthCalledWith(1, mockConnection, expect.stringContaining('INSERT INTO dinerOrder'), [user.id, order.franchiseId, order.storeId]);
+    expect(DB.getID).toHaveBeenNthCalledWith(1, mockConnection, 'id', 10, 'menu');
+    expect(DB.query).toHaveBeenLastCalledWith(mockConnection, expect.stringContaining('INSERT INTO orderItem'), [mockOrderId, 11, 'Soda', 2.50]);
+    expect(result).toEqual({ ...order, id: mockOrderId });
+    expect(mockConnection.end).toHaveBeenCalledTimes(1);
+});
