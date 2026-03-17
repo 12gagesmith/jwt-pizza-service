@@ -25,7 +25,7 @@ setInterval(() => {
   });
 
   sendMetricToGrafana(metrics);
-}, 10000);
+}, 36000000);
 
 function createMetric(metricName, metricValue, metricUnit, metricType, valueType, attributes) {
   attributes = { ...attributes, source: config.metrics.source };
