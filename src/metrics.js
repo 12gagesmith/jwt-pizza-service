@@ -15,17 +15,17 @@ function requestTracker(req, res, next) {
 }
 
 // This will periodically send metrics to Grafana
-setInterval(() => {
-  const metrics = [];
-  Object.keys(requests).forEach((endpoint) => {
-    metrics.push(createMetric('requests', requests[endpoint], '1', 'sum', 'asInt', { endpoint }));
-  });
-  Object.keys(requestMethods).forEach((method) => {
-    metrics.push(createMetric('requests', requestMethods[method], '1', 'sum', 'asInt', { method }));
-  });
+// setInterval(() => {
+//   const metrics = [];
+//   Object.keys(requests).forEach((endpoint) => {
+//     metrics.push(createMetric('requests', requests[endpoint], '1', 'sum', 'asInt', { endpoint }));
+//   });
+//   Object.keys(requestMethods).forEach((method) => {
+//     metrics.push(createMetric('requests', requestMethods[method], '1', 'sum', 'asInt', { method }));
+//   });
 
-  sendMetricToGrafana(metrics);
-}, 36000000);
+//   sendMetricToGrafana(metrics);
+// }, 36000000);
 
 function createMetric(metricName, metricValue, metricUnit, metricType, valueType, attributes) {
   attributes = { ...attributes, source: config.metrics.source };
