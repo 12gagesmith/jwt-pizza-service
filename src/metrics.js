@@ -14,6 +14,27 @@ function requestTracker(req, res, next) {
   next();
 }
 
+function activeUserTracker(req, res, next) {
+    const userId = req.headers['user-id'];
+    const activeUsers = new Map();
+
+    if (userId) {
+        // If user is already in the map, clear the existing timeout
+        if (activeUsers.has(userId)) {
+            clearTimeout(activeUsers.get(userId));
+        }
+
+        // Set a new timeout to remove the user after 10 minutes of inactivity
+        const timeoutId = setTimeout(() => {
+            activeUsers.delete(userId);
+        }, 600000);
+
+        // Update the map with the new timeout ID
+        activeUsers.set(userId, timeoutId);
+    }
+    next();
+}
+
 // This will periodically send metrics to Grafana
 setInterval(() => {
   const metrics = [];
@@ -87,4 +108,4 @@ function sendMetricToGrafana(metrics) {
     });
 }
 
-module.exports = { requestTracker };
+module.exports = { requestTracker, activeUserTracker };
