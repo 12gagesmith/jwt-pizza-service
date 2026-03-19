@@ -18,12 +18,15 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(metrics.requestTracker);
+app.use(metrics.activeUserTracker);
+
 const apiRouter = express.Router();
-app.use('/api', metrics.requestTracker, metrics.activeUserTracker, apiRouter);
-apiRouter.use('/auth', metrics.requestTracker, metrics.activeUserTracker, authRouter);
-apiRouter.use('/user', metrics.requestTracker, userRouter);
-apiRouter.use('/order', metrics.requestTracker, orderRouter);
-apiRouter.use('/franchise', metrics.requestTracker, franchiseRouter);
+app.use('/api', apiRouter);
+apiRouter.use('/auth', authRouter);
+apiRouter.use('/user', userRouter);
+apiRouter.use('/order', orderRouter);
+apiRouter.use('/franchise', franchiseRouter);
 
 apiRouter.use('/docs', metrics.requestTracker, (req, res) => {
   res.json({

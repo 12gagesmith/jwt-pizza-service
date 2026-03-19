@@ -16,21 +16,21 @@ function requestTracker(req, res, next) {
 }
 
 function activeUserTracker(req, res, next) {
-    const userId = req.headers['user-id'];
+    const authHeader = req.headers.authorization;
 
-    if (userId) {
+    if (authHeader) {
         // If user is already in the map, clear the existing timeout
-        if (activeUsers.has(userId)) {
-            clearTimeout(activeUsers.get(userId));
+        if (activeUsers.has(authHeader)) {
+            clearTimeout(activeUsers.get(authHeader));
         }
 
         // Set a new timeout to remove the user after 10 minutes of inactivity
         const timeoutId = setTimeout(() => {
-            activeUsers.delete(userId);
+            activeUsers.delete(authHeader);
         }, 600000);
 
         // Update the map with the new timeout ID
-        activeUsers.set(userId, timeoutId);
+        activeUsers.set(authHeader, timeoutId);
     }
     next();
 }
