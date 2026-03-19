@@ -3,6 +3,7 @@ const config = require('./config');
 // Metrics stored in memory
 const requests = {};
 const requestMethods = {};
+const activeUsers = new Map();
 
 // Middleware to track requests
 function requestTracker(req, res, next) {
@@ -16,7 +17,6 @@ function requestTracker(req, res, next) {
 
 function activeUserTracker(req, res, next) {
     const userId = req.headers['user-id'];
-    const activeUsers = new Map();
 
     if (userId) {
         // If user is already in the map, clear the existing timeout
@@ -44,6 +44,7 @@ setInterval(() => {
   Object.keys(requestMethods).forEach((method) => {
     metrics.push(createMetric('requests', requestMethods[method], '1', 'sum', 'asInt', { method }));
   });
+  metrics.push(createMetric('active_users', activeUsers.size, '1', 'gauge', 'asInt', {}));
 
   sendMetricToGrafana(metrics);
 }, 10000);
