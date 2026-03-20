@@ -15,7 +15,7 @@ function requestTracker(req, res, next) {
     const method = req.method;
     requestMethods[method] = (requestMethods[method] || 0) + 1;
 
-    if (req.path.startsWith('/api/auth') && (req.method === 'POST)' || req.method === 'PUT')) {
+    if (req.path.includes('/api/auth') && (req.method === 'POST)' || req.method === 'PUT')) {
         if (res.statusCode >= 200 && res.statusCode < 300) {
             authRequests['success'] = (authRequests['success'] || 0) + 1;
         } else {
