@@ -28,7 +28,7 @@ apiRouter.use('/user', userRouter);
 apiRouter.use('/order', orderRouter);
 apiRouter.use('/franchise', franchiseRouter);
 
-apiRouter.use('/docs', metrics.requestTracker, (req, res) => {
+apiRouter.use('/docs', (req, res) => {
   res.json({
     version: version.version,
     endpoints: [...authRouter.docs, ...userRouter.docs, ...orderRouter.docs, ...franchiseRouter.docs],
@@ -36,21 +36,21 @@ apiRouter.use('/docs', metrics.requestTracker, (req, res) => {
   });
 });
 
-app.get('/', metrics.requestTracker, (req, res) => {
+app.get('/', (req, res) => {
   res.json({
     message: 'welcome to JWT Pizza',
     version: version.version,
   });
 });
 
-app.use('*', metrics.requestTracker, (req, res) => {
+app.use('*', (req, res) => {
   res.status(404).json({
     message: 'unknown endpoint',
   });
 });
 
 // Default error handler for all exceptions and errors.
-app.use(metrics.requestTracker, (err, req, res, next) => {
+app.use((err, req, res, next) => {
   res.status(err.statusCode ?? 500).json({ message: err.message, stack: err.stack });
   next();
 });

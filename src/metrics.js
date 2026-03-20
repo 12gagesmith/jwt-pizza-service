@@ -3,18 +3,29 @@ const config = require('./config');
 // Metrics stored in memory
 const requests = {};
 const requestMethods = {};
+const authRequests = {};
 const activeUsers = new Map();
 
 // Middleware to track requests
 function requestTracker(req, res, next) {
-  const endpoint = `[${req.method}] ${req.path}`;
-  requests[endpoint] = (requests[endpoint] || 0) + 1;
-  requests["TOTAL"] = (requests["TOTAL"] || 0) + 1;
-  const method = req.method;
-  requestMethods[method] = (requestMethods[method] || 0) + 1;
-  next();
+    const endpoint = `[${req.method}] ${req.path}`;
+    requests[endpoint] = (requests[endpoint] || 0) + 1;
+    requests["TOTAL"] = (requests["TOTAL"] || 0) + 1;
+
+    const method = req.method;
+    requestMethods[method] = (requestMethods[method] || 0) + 1;
+
+    if (req.path.startsWith('/api/auth') && (req.method === 'POST)' || req.method === 'PUT')) {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+            authRequests['success'] = (authRequests['success'] || 0) + 1;
+        } else {
+            authRequests['failure'] = (authRequests['failure'] || 0) + 1;
+        }
+    }
+    next();
 }
 
+// Middleware to track active users
 function activeUserTracker(req, res, next) {
     const authHeader = req.headers.authorization;
 
@@ -27,7 +38,7 @@ function activeUserTracker(req, res, next) {
         // Set a new timeout to remove the user after 10 minutes of inactivity
         const timeoutId = setTimeout(() => {
             activeUsers.delete(authHeader);
-        }, 600000);
+        }, 300000);
 
         // Update the map with the new timeout ID
         activeUsers.set(authHeader, timeoutId);
@@ -42,7 +53,10 @@ setInterval(() => {
     metrics.push(createMetric('requests', requests[endpoint], '1', 'sum', 'asInt', { endpoint }));
   });
   Object.keys(requestMethods).forEach((method) => {
-    metrics.push(createMetric('requests', requestMethods[method], '1', 'sum', 'asInt', { method }));
+    metrics.push(createMetric('request_methods', requestMethods[method], '1', 'sum', 'asInt', { method }));
+  });
+  Object.keys(authRequests).forEach((result) => {
+    metrics.push(createMetric('authentications', authRequests[result], '1', 'sum', 'asInt', { result }));
   });
   metrics.push(createMetric('active_users', activeUsers.size, '1', 'gauge', 'asInt', {}));
 
