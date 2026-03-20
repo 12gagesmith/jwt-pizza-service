@@ -53,7 +53,7 @@ setInterval(() => {
     metrics.push(createMetric('requests', requests[endpoint], '1', 'sum', 'asInt', { endpoint }));
   });
   Object.keys(requestMethods).forEach((method) => {
-    metrics.push(createMetric('request_methods', requestMethods[method], '1', 'sum', 'asInt', { method }));
+    metrics.push(createMetric('requests', requestMethods[method], '1', 'sum', 'asInt', { method }));
   });
   Object.keys(authRequests).forEach((result) => {
     metrics.push(createMetric('authentications', authRequests[result], '1', 'sum', 'asInt', { result }));
