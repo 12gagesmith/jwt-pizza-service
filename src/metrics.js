@@ -15,13 +15,15 @@ function requestTracker(req, res, next) {
     const method = req.method;
     requestMethods[method] = (requestMethods[method] || 0) + 1;
 
-    if (req.path.includes('/api/auth') && (req.method === 'POST)' || req.method === 'PUT')) {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-            authRequests['success'] = (authRequests['success'] || 0) + 1;
-        } else {
-            authRequests['failure'] = (authRequests['failure'] || 0) + 1;
-        }
-    }
+    // res.on('finish', () => {
+    //     if (req.path.includes('/api/auth') && (method === 'POST' || method === 'PUT')) {
+    //         if (res.statusCode >= 200 && res.statusCode < 300) {
+    //             authRequests['success'] = (authRequests['success'] || 0) + 1;
+    //         } else {
+    //             authRequests['failure'] = (authRequests['failure'] || 0) + 1;
+    //         }
+    //     }
+    // });
     next();
 }
 
@@ -44,6 +46,14 @@ function activeUserTracker(req, res, next) {
         activeUsers.set(authHeader, timeoutId);
     }
     next();
+}
+
+function trackAuthRequest(result) {
+    if (result) {
+        authRequests['success'] = (authRequests['success'] || 0) + 1;
+    } else {
+        authRequests['failure'] = (authRequests['failure'] || 0) + 1;
+    }
 }
 
 // This will periodically send metrics to Grafana
@@ -123,4 +133,4 @@ function sendMetricToGrafana(metrics) {
     });
 }
 
-module.exports = { requestTracker, activeUserTracker };
+module.exports = { requestTracker, activeUserTracker, trackAuthRequest };

@@ -6,6 +6,8 @@ const { DB, Role } = require('../database/database.js');
 
 const authRouter = express.Router();
 
+const metrics = require('../metrics');
+
 authRouter.docs = [
   {
     method: 'POST',
@@ -58,6 +60,7 @@ authRouter.authenticateToken = (req, res, next) => {
 // register
 authRouter.post(
   '/',
+  metrics.trackAuthRequest,
   asyncHandler(async (req, res) => {
     const { name, email, password } = req.body;
     if (!name || !email || !password) {
@@ -74,9 +77,15 @@ authRouter.put(
   '/',
   asyncHandler(async (req, res) => {
     const { email, password } = req.body;
+    try {
     const user = await DB.getUser(email, password);
     const auth = await setAuth(user);
     res.json({ user: user, token: auth });
+    metrics.trackAuthRequest(true);
+    } catch (err) {
+      metrics.trackAuthRequest(false);
+      throw err;
+    }
   })
 );
 
