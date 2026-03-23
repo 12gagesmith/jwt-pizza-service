@@ -1,4 +1,18 @@
 const config = require('./config');
+const os = require('os');
+
+function getCpuUsagePercentage() {
+  const cpuUsage = os.loadavg()[0] / os.cpus().length;
+  return cpuUsage.toFixed(2) * 100;
+}
+
+function getMemoryUsagePercentage() {
+  const totalMemory = os.totalmem();
+  const freeMemory = os.freemem();
+  const usedMemory = totalMemory - freeMemory;
+  const memoryUsage = (usedMemory / totalMemory) * 100;
+  return memoryUsage.toFixed(2);
+}
 
 // Metrics stored in memory
 const requests = {};
@@ -69,6 +83,8 @@ setInterval(() => {
     metrics.push(createMetric('authentications', authRequests[result], '1', 'sum', 'asInt', { result }));
   });
   metrics.push(createMetric('active_users', activeUsers.size, '1', 'gauge', 'asInt', {}));
+  metrics.push(createMetric('cpu_usage', getCpuUsagePercentage(), '%', 'gauge', 'asDouble', {}));
+  metrics.push(createMetric('memory_usage', getMemoryUsagePercentage(), '%', 'gauge', 'asDouble', {}));
 
   sendMetricToGrafana(metrics);
 }, 10000);
