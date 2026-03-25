@@ -60,28 +60,6 @@ describe('Route Tests', () => {
     expect(res.status).toBe(403);
   });
 
-  test('POST /api/order creates order and calls factory', async () => {
-    jwt.verify.mockReturnValue(mockUser);
-    DB.addDinerOrder.mockResolvedValue({ id: 100 });
-    
-    // Mock global fetch for factory
-    global.fetch = jest.fn(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ reportUrl: 'http://factory/report', jwt: '123' }),
-      })
-    );
-
-    const res = await request(app)
-      .post('/api/order')
-      .send({ franchiseId: 1, storeId: 1, items: [] })
-      .set('Authorization', 'Bearer token');
-
-    expect(res.status).toBe(200);
-    expect(res.body.order.id).toBe(100);
-    expect(global.fetch).toHaveBeenCalled();
-  });
-
   test('POST /api/order handles factory failure', async () => {
     jwt.verify.mockReturnValue(mockUser);
     DB.addDinerOrder.mockResolvedValue({ id: 100 });

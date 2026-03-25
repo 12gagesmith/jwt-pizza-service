@@ -19,6 +19,9 @@ const requests = {};
 const requestMethods = {};
 const authRequests = {};
 const activeUsers = new Map();
+let pizzaPurchases = 0;
+let pizzaFailedPurchases = 0;
+let pizzaRevenue = 0;
 
 // Middleware to track requests
 function requestTracker(req, res, next) {
@@ -30,13 +33,6 @@ function requestTracker(req, res, next) {
     requestMethods[method] = (requestMethods[method] || 0) + 1;
 
     // res.on('finish', () => {
-    //     if (req.path.includes('/api/auth') && (method === 'POST' || method === 'PUT')) {
-    //         if (res.statusCode >= 200 && res.statusCode < 300) {
-    //             authRequests['success'] = (authRequests['success'] || 0) + 1;
-    //         } else {
-    //             authRequests['failure'] = (authRequests['failure'] || 0) + 1;
-    //         }
-    //     }
     // });
     next();
 }
@@ -70,6 +66,15 @@ function trackAuthRequest(result) {
     }
 }
 
+function trackPizzaPurchase(success, price) {
+  if (success) {
+    pizzaPurchases++;
+    pizzaRevenue += price;
+  } else {
+    pizzaFailedPurchases++;
+  }
+}
+
 // This will periodically send metrics to Grafana
 setInterval(() => {
   const metrics = [];
@@ -82,9 +87,15 @@ setInterval(() => {
   Object.keys(authRequests).forEach((result) => {
     metrics.push(createMetric('authentications', authRequests[result], '1', 'sum', 'asInt', { result }));
   });
+
   metrics.push(createMetric('active_users', activeUsers.size, '1', 'gauge', 'asInt', {}));
+
   metrics.push(createMetric('cpu_usage', getCpuUsagePercentage(), '%', 'gauge', 'asDouble', {}));
   metrics.push(createMetric('memory_usage', getMemoryUsagePercentage(), '%', 'gauge', 'asDouble', {}));
+
+  metrics.push(createMetric('pizza_purchases', pizzaPurchases, '1', 'sum', 'asInt', { result: 'Pizza Purchases' }));
+  metrics.push(createMetric('pizza_purchases', pizzaFailedPurchases, '1', 'sum', 'asInt', { result: 'Pizza Failures' }));
+  metrics.push(createMetric('pizza_revenue', pizzaRevenue, 'BTC', 'sum', 'asDouble', {}));
 
   sendMetricToGrafana(metrics);
 }, 10000);
@@ -149,4 +160,4 @@ function sendMetricToGrafana(metrics) {
     });
 }
 
-module.exports = { requestTracker, activeUserTracker, trackAuthRequest };
+module.exports = { requestTracker, activeUserTracker, trackAuthRequest, trackPizzaPurchase };
