@@ -88,7 +88,7 @@ orderRouter.post(
     });
     const j = await r.json();
     if (r.ok) {
-      metrics.trackPizzaPurchase(true, order.items.reduce((sum, item) => sum + item.price, 0));
+      metrics.trackPizzaPurchase(true, order.items.reduce((sum, item) => sum + item.price));
       res.send({ order, followLinkToEndChaos: j.reportUrl, jwt: j.jwt });
     } else {
       metrics.trackPizzaPurchase(false, 0);

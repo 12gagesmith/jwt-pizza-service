@@ -20,6 +20,7 @@ app.use((req, res, next) => {
 
 app.use(metrics.requestTracker);
 app.use(metrics.activeUserTracker);
+app.use(metrics.latencyTracker);
 
 const apiRouter = express.Router();
 app.use('/api', apiRouter);

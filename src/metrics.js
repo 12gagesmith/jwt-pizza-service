@@ -22,6 +22,8 @@ const activeUsers = new Map();
 let pizzaPurchases = 0;
 let pizzaFailedPurchases = 0;
 let pizzaRevenue = 0;
+const requestLatencies = [];
+const pizzaLatencies = [];
 
 // Middleware to track requests
 function requestTracker(req, res, next) {
@@ -58,6 +60,24 @@ function activeUserTracker(req, res, next) {
     next();
 }
 
+// Middleware to track latency
+function latencyTracker(req, res, next) {
+  const start = process.hrtime.bigint(); // high-resolution time
+  const method = req.method;
+  const path = req.path;
+
+  res.on('finish', () => {
+    const end = process.hrtime.bigint();
+    const durationMs = Number(end - start) / 1000000; // convert to ms
+    if (path.includes('/api/order') && method === 'POST') {
+      pizzaLatencies.push(durationMs);
+    }
+    requestLatencies.push(durationMs);
+  });
+
+  next();
+}
+
 function trackAuthRequest(result) {
     if (result) {
         authRequests['success'] = (authRequests['success'] || 0) + 1;
@@ -73,6 +93,12 @@ function trackPizzaPurchase(success, price) {
   } else {
     pizzaFailedPurchases++;
   }
+}
+
+function averageLatency(latencies) {
+  if (latencies.length === 0) return 0;
+  const total = latencies.reduce((sum, latency) => sum + latency, 0);
+  return total / latencies.length;
 }
 
 // This will periodically send metrics to Grafana
@@ -96,6 +122,9 @@ setInterval(() => {
   metrics.push(createMetric('pizza_purchases', pizzaPurchases, '1', 'sum', 'asInt', { result: 'Pizza Purchases' }));
   metrics.push(createMetric('pizza_purchases', pizzaFailedPurchases, '1', 'sum', 'asInt', { result: 'Pizza Failures' }));
   metrics.push(createMetric('pizza_revenue', pizzaRevenue, 'BTC', 'sum', 'asDouble', {}));
+
+  metrics.push(createMetric('request_latency', averageLatency(requestLatencies), 'ms', 'gauge', 'asDouble', {}));
+  metrics.push(createMetric('pizza_latency', averageLatency(pizzaLatencies), 'ms', 'gauge', 'asDouble', {}));
 
   sendMetricToGrafana(metrics);
 }, 10000);
@@ -160,4 +189,4 @@ function sendMetricToGrafana(metrics) {
     });
 }
 
-module.exports = { requestTracker, activeUserTracker, trackAuthRequest, trackPizzaPurchase };
+module.exports = { requestTracker, activeUserTracker, trackAuthRequest, trackPizzaPurchase, latencyTracker };
