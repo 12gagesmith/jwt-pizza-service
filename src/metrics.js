@@ -3,7 +3,7 @@ const os = require('os');
 
 function getCpuUsagePercentage() {
   const cpuUsage = os.loadavg()[0] / os.cpus().length;
-  return cpuUsage.toFixed(2) * 100;
+  return Number((cpuUsage * 100).toFixed(2));
 }
 
 function getMemoryUsagePercentage() {
@@ -11,7 +11,7 @@ function getMemoryUsagePercentage() {
   const freeMemory = os.freemem();
   const usedMemory = totalMemory - freeMemory;
   const memoryUsage = (usedMemory / totalMemory) * 100;
-  return memoryUsage.toFixed(2);
+  return Number(memoryUsage.toFixed(2));
 }
 
 // Metrics stored in memory
@@ -98,7 +98,7 @@ function trackPizzaPurchase(success, price) {
 function averageLatency(latencies) {
   if (latencies.length === 0) return 0;
   const total = latencies.reduce((sum, latency) => sum + latency, 0);
-  return total / latencies.length;
+  return Number((total / latencies.length).toFixed(2));
 }
 
 // This will periodically send metrics to Grafana
@@ -131,6 +131,7 @@ setInterval(() => {
 
 function createMetric(metricName, metricValue, metricUnit, metricType, valueType, attributes) {
   attributes = { ...attributes, source: config.metrics.source };
+  const sanitizedMetricValue = sanitizeMetricValue(metricValue, valueType);
 
   const metric = {
     name: metricName,
@@ -138,8 +139,8 @@ function createMetric(metricName, metricValue, metricUnit, metricType, valueType
     [metricType]: {
       dataPoints: [
         {
-          [valueType]: metricValue,
-          timeUnixNano: Date.now() * 1000000,
+          [valueType]: sanitizedMetricValue,
+          timeUnixNano: `${BigInt(Date.now()) * 1000000n}`,
           attributes: [],
         },
       ],
@@ -161,6 +162,16 @@ function createMetric(metricName, metricValue, metricUnit, metricType, valueType
   return metric;
 }
 
+function sanitizeMetricValue(metricValue, valueType) {
+  if (valueType === 'asInt') {
+    const value = Number(metricValue);
+    return Number.isFinite(value) ? `${Math.trunc(value)}` : '0';
+  }
+
+  const value = Number(metricValue);
+  return Number.isFinite(value) ? value : 0;
+}
+
 function sendMetricToGrafana(metrics) {
   const body = {
     resourceMetrics: [
@@ -179,9 +190,10 @@ function sendMetricToGrafana(metrics) {
     body: JSON.stringify(body),
     headers: { Authorization: `Bearer ${config.metrics.accountId}:${config.metrics.apiKey}`, 'Content-Type': 'application/json' },
   })
-    .then((response) => {
+    .then(async (response) => {
       if (!response.ok) {
-        throw new Error(`HTTP status: ${response.status}`);
+        const responseText = await response.text();
+        throw new Error(`HTTP status: ${response.status}; body: ${responseText}`);
       }
     })
     .catch((error) => {
