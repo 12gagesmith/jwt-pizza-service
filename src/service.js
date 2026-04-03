@@ -6,6 +6,7 @@ const userRouter = require('./routes/userRouter.js');
 const version = require('./version.json');
 const config = require('./config.js');
 const metrics = require('./metrics');
+const logger = require('./logger');
 
 const app = express();
 app.use(express.json());
@@ -21,6 +22,7 @@ app.use((req, res, next) => {
 app.use(metrics.requestTracker);
 app.use(metrics.activeUserTracker);
 app.use(metrics.latencyTracker);
+app.use(logger.httpLogger);
 
 const apiRouter = express.Router();
 app.use('/api', apiRouter);
