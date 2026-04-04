@@ -7,6 +7,7 @@ const { asyncHandler, StatusCodeError } = require('../endpointHelper.js');
 const orderRouter = express.Router();
 
 const metrics = require('../metrics');
+const logger = require('../logger');
 
 orderRouter.docs = [
   {
@@ -87,6 +88,13 @@ orderRouter.post(
       body: JSON.stringify({ diner: { id: req.user.id, name: req.user.name, email: req.user.email }, order }),
     });
     const j = await r.json();
+    const logData = {
+      path: r.url,
+      statusCode: r.status,
+      request: JSON.stringify({ diner: { id: req.user.id, name: req.user.name, email: req.user.email }, order }),
+      response: JSON.stringify(j),
+    };
+    logger.log('info', 'factory', logData);
     if (r.ok) {
       metrics.trackPizzaPurchase(true, order.items.reduce((sum, item) => sum + parseFloat(item.price), 0));
       res.send({ order, followLinkToEndChaos: j.reportUrl, jwt: j.jwt });
