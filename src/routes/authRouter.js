@@ -78,6 +78,9 @@ authRouter.put(
   asyncHandler(async (req, res) => {
     const { email, password } = req.body;
     try {
+      if (!email || !password) {
+        throw new Error('email and password are required');
+      }
     const user = await DB.getUser(email, password);
     const auth = await setAuth(user);
     res.json({ user: user, token: auth });
