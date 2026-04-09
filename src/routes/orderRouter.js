@@ -102,6 +102,16 @@ orderRouter.post(
   authRouter.authenticateToken,
   asyncHandler(async (req, res) => {
     const orderReq = req.body;
+
+    const officialMenu = await DB.getMenu();
+
+    for (const item of orderReq.items) {
+      const menuItem = officialMenu.find((m) => m.id === item.menuId);
+      if (!menuItem || menuItem.description !== item.description || menuItem.price !== item.price) {
+        res.status(400).send({ message: `Menu item does not match official menu` });
+      }
+    }
+
     const order = await DB.addDinerOrder(req.user, orderReq);
     const r = await fetch(`${config.factory.url}/api/order`, {
       method: 'POST',
