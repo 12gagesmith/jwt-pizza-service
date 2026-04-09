@@ -79,7 +79,7 @@ authRouter.put(
     const { email, password } = req.body;
     try {
       if (!email || !password) {
-        throw new Error('email and password are required');
+        return res.status(400).json({ message: 'email and password are required' });
       }
     const user = await DB.getUser(email, password);
     const auth = await setAuth(user);
