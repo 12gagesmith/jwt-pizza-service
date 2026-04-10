@@ -92,16 +92,6 @@ authRouter.put(
   })
 );
 
-authRouter.post(
-  '/update',
-  asyncHandler(async (req, res) => {
-    const { name, email, password } = req.body;
-    const user = await DB.updateUser(1, name, email, password );
-    const auth = await setAuth(user);
-    res.json({ user: user, token: auth });
-  })
-);
-
 // logout
 authRouter.delete(
   '/',
